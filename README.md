@@ -1,7 +1,7 @@
 ## 프로젝트 세팅
 
 ```
-yarn create react-app react-blog --template typescript
+npm create vite@latest react-blog
 ```
 
 ## 패키지 설치
