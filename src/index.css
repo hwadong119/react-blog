@@ -194,6 +194,11 @@ footer a:hover {
   padding: 20px 0;
 }
 
+/* 텍스트의 공백과 줄바꿈을 유지하여 표시 */
+.post__text--pre-wrap {
+  white-space: pre-wrap;
+}
+
 /* profile */
 
 .profile__box {
