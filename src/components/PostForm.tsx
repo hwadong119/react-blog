@@ -1,11 +1,14 @@
-import { useContext, useState } from "react";
-import { collection, addDoc } from "firebase/firestore";
+import { useContext, useEffect, useState } from "react";
+import { collection, addDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import AuthContext from "../context/AuthContext";
 import { db } from "../firebaseApp";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import { PostProps } from "./PostList";
 
 export default function PostForm() {
+  const params = useParams();
+  const [post, setPost] = useState<PostProps | null>(null);
   const [title, setTitle] = useState<string>("");
   const [summary, setSummary] = useState<string>("");
   const [content, setContent] = useState<string>("");
@@ -16,16 +19,31 @@ export default function PostForm() {
     e.preventDefault();
 
     try {
-      await addDoc(collection(db, "posts"), {
-        title: title,
-        summary: summary,
-        content: content,
-        createAt: new Date()?.toLocaleDateString(),
-        email: user?.email,
-      });
+      if (post && post.id) {
+        // 만약 post 데이터가 있다면, firestore로 데이터 수정
+        const postRef = doc(db, "posts", post.id);
+        await updateDoc(postRef, {
+          title: title,
+          summary: summary,
+          content: content,
+          updatedAt: new Date()?.toLocaleDateString(),
+        });
 
-      toast?.success("게시글을 생성했습니다.");
-      navigate("/");
+        toast?.success("게시글을 수정했습니다.");
+        navigate(`/posts/${post.id}`);
+      } else {
+        await addDoc(collection(db, "posts"), {
+          title: title,
+          summary: summary,
+          content: content,
+          createdAt: new Date()?.toLocaleDateString(),
+          email: user?.email,
+          uid: user?.uid,
+        });
+
+        toast?.success("게시글을 생성했습니다.");
+        navigate("/");
+      }
     } catch (e: any) {
       console.log(e);
       toast?.error(e?.code);
@@ -51,6 +69,30 @@ export default function PostForm() {
       setContent(value);
     }
   };
+
+  // 특정 ID의 게시글 데이터를 Firestore에서 가져오는 함수
+  const getPost = async (id: string) => {
+    if (id) {
+      const docRef = doc(db, "posts", id);
+      const docSnap = await getDoc(docRef);
+
+      // 가져온 데이터를 상태에 저장
+      setPost({ id: docSnap.id, ...(docSnap.data() as PostProps) });
+    }
+  };
+
+  // 컴포넌트가 마운트될 때 또는 URL 파라미터가 변경될 때 게시글 데이터를 가져옴
+  useEffect(() => {
+    if (params?.id) getPost(params.id);
+  }, [params?.id]);
+
+  useEffect(() => {
+    if (post) {
+      setTitle(post?.title);
+      setSummary(post?.summary);
+      setContent(post?.content);
+    }
+  }, [post]);
 
   return (
     <form onSubmit={onSubmit} className="form">
@@ -87,7 +129,11 @@ export default function PostForm() {
         />
       </div>
       <div className="form__block">
-        <input type="submit" value="제출" className="form__btn--submit" />
+        <input
+          type="submit"
+          value={post ? "수정" : "제출"}
+          className="form__btn--submit"
+        />
       </div>
     </form>
   );

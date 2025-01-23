@@ -19,7 +19,9 @@ export interface PostProps {
   email: string;
   summary: string;
   content: string;
-  createAt: string;
+  createdAt: string;
+  updatedAt: string;
+  uid: string;
 }
 
 export default function PostList({ hasNavigation = true }: PostListProps) {
@@ -80,7 +82,7 @@ export default function PostList({ hasNavigation = true }: PostListProps) {
                 <div className="post__profile-box">
                   <div className="post__profile" />
                   <div className="post__author-name">{post.email}</div>
-                  <div className="post__date">{post.createAt}</div>
+                  <div className="post__date">{post.createdAt}</div>
                 </div>
                 <div className="post__title">{post.title}</div>
                 <div className="post__text">{post.summary}</div>

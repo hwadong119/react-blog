@@ -41,7 +41,7 @@ export default function PostDetail() {
           <div className="post__profile-box">
             <div className="post__profile" />
             <div className="post__author-name">{post?.email}</div>
-            <div className="post__date">{post?.createAt}</div>
+            <div className="post__date">{post?.createdAt}</div>
           </div>
           <div className="post__utils-box">
             <div
@@ -52,7 +52,7 @@ export default function PostDetail() {
               삭제
             </div>
             <div className="post__edit">
-              <Link to={`/posts/edit/1`}>수정</Link>
+              <Link to={`/posts/edit/${post?.id}`}>수정</Link>
             </div>
           </div>
           <div className="post__text post__text--pre-wrap">{post?.content}</div>
