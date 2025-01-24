@@ -1,8 +1,9 @@
-import { collection, getDocs } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { db } from "../firebaseApp";
 import AuthContext from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 // PostList 컴포넌트의 props 인터페이스 정의
 interface PostListProps {
@@ -34,25 +35,29 @@ export default function PostList({ hasNavigation = true }: PostListProps) {
 
   // Firestore에서 게시글 데이터를 가져오는 함수수
   const getPosts = async () => {
-    // Firestore의 "posts" 컬렉션에서 데이터를 가져옴
     const datas = await getDocs(collection(db, "posts"));
-    // 새로운 게시글 데이터를 저장할 배열 선언
-    const newPosts: PostProps[] = [];
-
-    // 가져온 Firestore 데이터를 반복 처리
+    setPosts([]);
     datas?.forEach((doc) => {
-      // Firestore 문서 데이터를 객체로 변환하고, 문서 ID를 추가
       const dataObj = { ...doc.data(), id: doc.id };
-      newPosts.unshift(dataObj as PostProps);
+      setPosts((prev) => [...prev, dataObj as PostProps]);
     });
-
-    setPosts(newPosts);
   };
 
   // 컴포넌트가 마운트 될 때 'getPosts' 함수를 호출하여 데이터를 가져옴옴
   useEffect(() => {
     getPosts();
-  }, []);
+  }, [posts]);
+
+  // 게시글 삭제 핸들러
+  const handleDelete = async (id: string) => {
+    const confirm = window.confirm("해당 게시글을 삭제하겠습니까?");
+
+    if (confirm && id) {
+      await deleteDoc(doc(db, "posts", id));
+
+      toast.success("게시글을 삭제했습니다.");
+    }
+  };
 
   return (
     <>
@@ -89,7 +94,13 @@ export default function PostList({ hasNavigation = true }: PostListProps) {
               </Link>
               {post?.email === user?.email && (
                 <div className="post__utils-box">
-                  <div className="post__delete">삭제</div>
+                  <div
+                    className="post__delete"
+                    role="presentation"
+                    onClick={() => handleDelete(post.id as string)}
+                  >
+                    삭제
+                  </div>
                   <div className="post__edit">
                     <Link to={`/posts/edit/${post?.id}`}>수정</Link>
                   </div>
