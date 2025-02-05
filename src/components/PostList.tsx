@@ -1,4 +1,12 @@
-import { collection, deleteDoc, doc, getDocs } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { db } from "../firebaseApp";
@@ -8,6 +16,7 @@ import { toast } from "react-toastify";
 // PostList 컴포넌트의 props 인터페이스 정의
 interface PostListProps {
   hasNavigation?: boolean;
+  defaultTab?: TabType;
 }
 
 // 탭 타입 정의
@@ -25,9 +34,12 @@ export interface PostProps {
   uid: string;
 }
 
-export default function PostList({ hasNavigation = true }: PostListProps) {
+export default function PostList({
+  hasNavigation = true,
+  defaultTab = "all",
+}: PostListProps) {
   // 현재 활성화된 탭 상태 관리
-  const [activeTab, setActiveTab] = useState<TabType>("all");
+  const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
   // 게시글 목록 상태 관리
   const [posts, setPosts] = useState<PostProps[]>([]);
   // 사용자 정보 가져오기
@@ -35,8 +47,25 @@ export default function PostList({ hasNavigation = true }: PostListProps) {
 
   // Firestore에서 게시글 데이터를 가져오는 함수수
   const getPosts = async () => {
-    const datas = await getDocs(collection(db, "posts"));
     setPosts([]);
+
+    let postsRef = collection(db, "posts");
+    let postsQuery;
+
+    if (activeTab === "my" && user) {
+      // 나의 글만 필터링
+      postsQuery = query(
+        postsRef,
+        where("uid", "==", user.uid),
+        orderBy("createdAt", "asc")
+      );
+    } else {
+      // 모든 글 보여주기
+      postsQuery = query(postsRef, orderBy("createdAt", "desc"));
+    }
+
+    const datas = await getDocs(postsQuery);
+
     datas?.forEach((doc) => {
       const dataObj = { ...doc.data(), id: doc.id };
       setPosts((prev) => [...prev, dataObj as PostProps]);
@@ -46,7 +75,7 @@ export default function PostList({ hasNavigation = true }: PostListProps) {
   // 컴포넌트가 마운트 될 때 'getPosts' 함수를 호출하여 데이터를 가져옴옴
   useEffect(() => {
     getPosts();
-  }, [posts]);
+  }, [activeTab]);
 
   // 게시글 삭제 핸들러
   const handleDelete = async (id: string) => {
@@ -58,6 +87,8 @@ export default function PostList({ hasNavigation = true }: PostListProps) {
       toast.success("게시글을 삭제했습니다.");
     }
   };
+
+  console.log(posts);
 
   return (
     <>
